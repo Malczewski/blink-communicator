@@ -6,33 +6,38 @@ const locales = {
 		"mode": {
 			"row": "Mode: Row Selection",
 			"column": "Mode: Column Selection",
-			"eyeMovement": "Mode: Eye Movement Navigation"
+			"eyeMovement": "Mode: Eye Movement Navigation",
+			"manual": "Mode: Manual Control"
 		},
 		"status": {
-			"selectRow": "Blink to move to next row, double blink to select row",
+			"selectRow": "Blink to move down, triple blink to move up, double blink to select row",
 			"selectColumn": "Blink for next column, double blink to select",
-			"rowSelected": "Row {0}. Blink for next row or double blink to select",
+			"rowSelectedDown": "Row {0}. Blink to move down, triple to move up, double to select",
+			"rowSelectedUp": "Row {0}. Blink to move down, triple to move up, double to select",
 			"columnSelected": "Column {0}. Double blink to select",
 			"columnMode": "Column mode. Blink for next column, double blink to select",
 			"messageComplete": "MESSAGE COMPLETE: {0}",
 			"eyeMovement": "Eye movement mode active. Move eyes to navigate, double blink to select",
 			"eyeMovementCell": "Row {0}, Column {1}. Double blink to select",
 			"manualCell": "Row {0}, Column {1}. Press Enter to select",
-			"cameraRequired": "Camera mode is required for blink calibration"
+			"cameraRequired": "Camera mode is required for calibration",
+			"backToRows": "Back to row selection. Blink to move down, triple to move up"
 		},
 		"buttons": {
 			"reset": "Reset",
 			"clearText": "Clear Text",
 			"restartCamera": "Restart Camera",
 			"manualMode": "Manual Mode",
-			"cameraMode": "Camera Mode",
+			"blinkMode": "Blink Mode",
+			"eyeMovement": "Eye Movement",
 			"debug": "Debug",
 			"hideDebug": "Hide Debug",
-			"eyeMovement": "Eye Movement Mode",
-			"blinkMode": "Blink Mode",
-			"blinkCalibration": "Calibrate Blinks"
+			"blinkCalibration": "Calibrate Blinks",
+			"eyeMovementCalibration": "Calibrate Movement",
+			"blinkSpeedSlow": "Slow Blink",
+			"blinkSpeedFast": "Fast Blink"
 		},
-		"manualMode": "Manual mode: Space=blink, Enter=double blink",
+		"manualMode": "Manual mode: Space=next, Enter=select, Arrows=navigate",
 		"instructions": {
 			"title": "Instructions:",
 			"cameraMode": "Camera Mode:",
@@ -41,6 +46,7 @@ const locales = {
 			"step3": "3. Double blink to select row",
 			"step4": "4. Blink to move to next column",
 			"step5": "5. Double blink to select character/word",
+			"step6": "6. Triple blink to go back to row selection",
 			"eyeMovementMode": "Eye Movement Mode:",
 			"eyeStep1": "1. Look in desired direction to move",
 			"eyeStep2": "2. Double blink to select",
@@ -96,33 +102,38 @@ const locales = {
 		"mode": {
 			"row": "Режим: Выбор строки",
 			"column": "Режим: Выбор столбца",
-			"eyeMovement": "Режим: Навигация движением глаз"
+			"eyeMovement": "Режим: Навигация движением глаз",
+			"manual": "Режим: Ручное управление"
 		},
 		"status": {
-			"selectRow": "Моргните для следующей строки, двойное моргание для выбора",
+			"selectRow": "Моргните для движения вниз, тройное для движения вверх, двойное для выбора",
 			"selectColumn": "Моргните для следующего столбца, двойное моргание для выбора",
-			"rowSelected": "Строка {0}. Моргните для следующей или двойное для выбора",
+			"rowSelectedDown": "Строка {0}. Моргните для движения вниз, тройное вверх, двойное для выбора",
+			"rowSelectedUp": "Строка {0}. Моргните для движения вниз, тройное вверх, двойное для выбора",
 			"columnSelected": "Столбец {0}. Двойное моргание для выбора",
 			"columnMode": "Режим столбца. Моргните для следующего, двойное для выбора",
 			"messageComplete": "СООБЩЕНИЕ ЗАВЕРШЕНО: {0}",
 			"eyeMovement": "Режим движения глаз активен. Двигайте глазами для навигации, двойное моргание для выбора",
 			"eyeMovementCell": "Строка {0}, Столбец {1}. Двойное моргание для выбора",
 			"manualCell": "Строка {0}, Столбец {1}. Нажмите Enter для выбора",
-			"cameraRequired": "Для калибровки моргания требуется режим камеры"
+			"cameraRequired": "Для калибровки требуется режим камеры",
+			"backToRows": "Возврат к выбору строки. Моргните для движения вниз, тройное вверх"
 		},
 		"buttons": {
 			"reset": "Сброс",
 			"clearText": "Очистить текст",
 			"restartCamera": "Перезапуск камеры",
 			"manualMode": "Ручной режим",
-			"cameraMode": "Режим камеры",
+			"blinkMode": "Режим моргания",
+			"eyeMovement": "Движение глаз",
 			"debug": "Отладка",
 			"hideDebug": "Скрыть отладку",
-			"eyeMovement": "Режим движения глаз",
-			"blinkMode": "Режим моргания",
-			"blinkCalibration": "Калибровка моргания"
+			"blinkCalibration": "Калибровка моргания",
+			"eyeMovementCalibration": "Калибровка движения",
+			"blinkSpeedSlow": "Медленное моргание",
+			"blinkSpeedFast": "Быстрое моргание"
 		},
-		"manualMode": "Ручной режим: Пробел=моргание, Enter=двойное моргание",
+		"manualMode": "Ручной режим: Пробел=следующий, Enter=выбор, Стрелки=навигация",
 		"instructions": {
 			"title": "Инструкция:",
 			"cameraMode": "Режим камеры:",
@@ -131,6 +142,7 @@ const locales = {
 			"step3": "3. Двойное моргание для выбора строки",
 			"step4": "4. Моргните для перехода к следующему столбцу",
 			"step5": "5. Двойное моргание для выбора символа/слова",
+			"step6": "6. Тройное моргание для возврата к выбору строки",
 			"eyeMovementMode": "Режим движения глаз:",
 			"eyeStep1": "1. Смотрите в нужном направлении",
 			"eyeStep2": "2. Двойное моргание для выбора",
@@ -186,33 +198,38 @@ const locales = {
 		"mode": {
 			"row": "Режим: Вибір рядка",
 			"column": "Режим: Вибір стовпця",
-			"eyeMovement": "Режим: Навігація рухом очей"
+			"eyeMovement": "Режим: Навігація рухом очей",
+			"manual": "Режим: Ручне керування"
 		},
 		"status": {
-			"selectRow": "Моргніть для наступного рядка, подвійне моргання для вибору",
+			"selectRow": "Моргніть для руху вниз, потрійне для руху вгору, подвійне для вибору",
 			"selectColumn": "Моргніть для наступного стовпця, подвійне моргання для вибору",
-			"rowSelected": "Рядок {0}. Моргніть для наступного або подвійне для вибору",
+			"rowSelectedDown": "Рядок {0}. Моргніть для руху вниз, потрійне вгору, подвійне для вибору",
+			"rowSelectedUp": "Рядок {0}. Моргніть для руху вниз, потрійне вгору, подвійне для вибору",
 			"columnSelected": "Стовпець {0}. Подвійне моргання для вибору",
 			"columnMode": "Режим стовпця. Моргніть для наступного, подвійне для вибору",
 			"messageComplete": "ПОВІДОМЛЕННЯ ЗАВЕРШЕНО: {0}",
 			"eyeMovement": "Режим руху очей активний. Рухайте очима для навігації, подвійне моргання для вибору",
 			"eyeMovementCell": "Рядок {0}, Стовпець {1}. Подвійне моргання для вибору",
 			"manualCell": "Рядок {0}, Стовпець {1}. Натисніть Enter для вибору",
-			"cameraRequired": "Для калібрування моргання потрібен режим камери"
+			"cameraRequired": "Для калібрування потрібен режим камери",
+			"backToRows": "Повернення до вибору рядка. Моргніть для руху вниз, потрійне вгору"
 		},
 		"buttons": {
 			"reset": "Скидання",
 			"clearText": "Очистити текст",
 			"restartCamera": "Перезапуск камери",
 			"manualMode": "Ручний режим",
-			"cameraMode": "Режим камери",
+			"blinkMode": "Режим моргання",
+			"eyeMovement": "Рух очей",
 			"debug": "Налагодження",
 			"hideDebug": "Сховати налагодження",
-			"eyeMovement": "Режим руху очей",
-			"blinkMode": "Режим моргання",
-			"blinkCalibration": "Калібрування моргання"
+			"blinkCalibration": "Калібрування моргання",
+			"eyeMovementCalibration": "Калібрування руху",
+			"blinkSpeedSlow": "Повільне моргання",
+			"blinkSpeedFast": "Швидке моргання"
 		},
-		"manualMode": "Ручний режим: Пробіл=моргання, Enter=подвійне моргання",
+		"manualMode": "Ручний режим: Пробіл=наступний, Enter=вибір, Стрілки=навігація",
 		"instructions": {
 			"title": "Інструкція:",
 			"cameraMode": "Режим камери:",
@@ -221,6 +238,7 @@ const locales = {
 			"step3": "3. Подвійне моргання для вибору рядка",
 			"step4": "4. Моргніть для переходу до наступного стовпця",
 			"step5": "5. Подвійне моргання для вибору символу/слова",
+			"step6": "6. Потрійне моргання для повернення до вибору рядка",
 			"eyeMovementMode": "Режим руху очей:",
 			"eyeStep1": "1. Дивіться у потрібному напрямку",
 			"eyeStep2": "2. Подвійне моргання для вибору",

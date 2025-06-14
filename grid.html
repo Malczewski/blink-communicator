@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grid Configuration</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+        }
+        textarea {
+            width: 100%;
+            height: 200px;
+            margin: 10px 0;
+            padding: 10px;
+            font-family: monospace;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+        .instructions {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        .instructions code {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 2px 5px;
+            border-radius: 3px;
+        }
+        button {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            padding: 10px 20px;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px 0;
+            transition: all 0.3s ease;
+        }
+        button:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        .link-container {
+            margin-top: 20px;
+        }
+        #generatedLink {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            font-family: monospace;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+        .error {
+            color: #ff4444;
+            background: rgba(255, 68, 68, 0.1);
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Grid Configuration</h1>
+        
+        <div class="instructions">
+            <h3>Instructions:</h3>
+            <p>1. Enter your grid content in CSV format (comma-separated values)</p>
+            <p>2. Use special keys:</p>
+            <ul>
+                <li><code>{space}</code> for space character</li>
+                <li><code>{backspace}</code> for backspace/delete function</li>
+            </ul>
+            <p>3. Example:</p>
+            <pre>YES,NO,{space},{backspace},STOP,END
+A,B,C,D,E,F
+G,H,I,J,K,L</pre>
+        </div>
+
+        <textarea id="gridInput" placeholder="Enter your grid content in CSV format..."></textarea>
+        <div id="errorMessage" class="error"></div>
+        <button onclick="generateLink()">Generate Link</button>
+        
+        <div class="link-container">
+            <input type="text" id="generatedLink" readonly placeholder="Generated link will appear here...">
+            <button onclick="copyLink()">Copy Link</button>
+        </div>
+    </div>
+
+    <script>
+        function validateGrid(grid) {
+            if (!grid || !grid.length) return false;
+            const width = grid[0].length;
+            return grid.every(row => row.length === width);
+        }
+
+        function parseCSV(text) {
+            return text.trim().split('\n').map(line => 
+                line.split(',').map(cell => cell.trim())
+            );
+        }
+
+        function generateLink() {
+            const input = document.getElementById('gridInput').value;
+            const errorElement = document.getElementById('errorMessage');
+            const linkElement = document.getElementById('generatedLink');
+            
+            try {
+                const grid = parseCSV(input);
+                
+                if (!validateGrid(grid)) {
+                    throw new Error('Invalid grid format. All rows must have the same number of columns.');
+                }
+
+                // Get base URL (current URL without grid.html and without query params)
+                const currentUrl = new URL(window.location.href);
+                const baseUrl = currentUrl.origin + currentUrl.pathname.replace('grid.html', '');
+                
+                // Encode grid data
+                const gridData = btoa(JSON.stringify(grid));
+                const finalUrl = `${baseUrl}index.html?grid=${gridData}`;
+                
+                // Show generated link
+                linkElement.value = finalUrl;
+                errorElement.style.display = 'none';
+            } catch (error) {
+                errorElement.textContent = 'Error: ' + error.message;
+                errorElement.style.display = 'block';
+                linkElement.value = '';
+            }
+        }
+
+        function copyLink() {
+            const linkElement = document.getElementById('generatedLink');
+            linkElement.select();
+            document.execCommand('copy');
+            
+            // Visual feedback
+            const button = event.target;
+            const originalText = button.textContent;
+            button.textContent = 'Copied!';
+            setTimeout(() => {
+                button.textContent = originalText;
+            }, 2000);
+        }
+    </script>
+</body>
+</html> 

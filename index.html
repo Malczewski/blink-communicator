@@ -36,27 +36,51 @@
 		<div class="grid" id="grid"></div>
 
 		<div class="controls">
-			<button class="control-btn" onclick="resetSelection()" data-i18n="buttons.reset">Reset</button>
-			<button class="control-btn" onclick="clearText()" data-i18n="buttons.clearText">Clear Text</button>
-			<button class="control-btn" onclick="toggleCamera()" data-i18n="buttons.restartCamera">Restart Camera</button>
-			<button class="control-btn" onclick="toggleManualMode()" id="manualModeBtn" data-i18n="buttons.manualMode">Manual Mode</button>
-			<button class="control-btn" onclick="toggleEyeMovement()" id="eyeMovementBtn" data-i18n="buttons.eyeMovement">Eye Movement Mode</button>
-			<button class="control-btn" onclick="startBlinkCalibration()" id="blinkCalibrationBtn" data-i18n="buttons.blinkCalibration">Calibrate Blinks</button>
-			<button class="control-btn" onclick="toggleDebug()" id="debugBtn" data-i18n="buttons.debug">Debug</button>
+			<div class="control-row">
+				<button class="control-btn" onclick="resetSelection()" data-i18n="buttons.reset">Reset</button>
+				<button class="control-btn" onclick="clearText()" data-i18n="buttons.clearText">Clear Text</button>
+				<button class="control-btn" onclick="toggleCamera()" data-i18n="buttons.restartCamera">Restart Camera</button>
+				<div id="blinkSpeedControls" class="button-group" style="display: none;">
+					<button id="blinkSpeedSlowBtn" class="control-btn active" onclick="setBlinkSpeed(false)" data-i18n="buttons.blinkSpeedSlow">Slow Blink</button>
+					<button id="blinkSpeedFastBtn" class="control-btn" onclick="setBlinkSpeed(true)" data-i18n="buttons.blinkSpeedFast">Fast Blink</button>
+				</div>
+			</div>
+			<div class="control-row">
+				<button id="blinkModeBtn" class="control-btn active" onclick="setMode('blink')" data-i18n="buttons.blinkMode">Blink Mode</button>
+				<button id="eyeMovementModeBtn" class="control-btn" onclick="setMode('eyeMovement')" data-i18n="buttons.eyeMovement">Eye Movement</button>
+				<button id="manualModeBtn" class="control-btn" onclick="setMode('manual')" data-i18n="buttons.manualMode">Manual Mode</button>
+			</div>
+			<div class="control-row">
+				<button class="control-btn" onclick="startBlinkCalibration()" id="blinkCalibrationBtn" data-i18n="buttons.blinkCalibration">Calibrate Blinks</button>
+				<button class="control-btn" onclick="startEyeMovementCalibration()" id="eyeMovementCalibrationBtn" data-i18n="buttons.eyeMovementCalibration">Calibrate Movement</button>
+				<button class="control-btn" onclick="toggleDebug()" id="debugBtn" data-i18n="buttons.debug">Debug</button>
+			</div>
 		</div>
 
 		<div class="debug-info" id="debugInfo" style="display: none;">
-			<div><span data-i18n="debug.leftEAR">Left EAR:</span> <span id="leftEAR">0.00</span></div>
-			<div><span data-i18n="debug.rightEAR">Right EAR:</span> <span id="rightEAR">0.00</span></div>
-			<div><span data-i18n="debug.avgEAR">Average EAR:</span> <span id="avgEAR">0.00</span></div>
-			<div><span data-i18n="debug.threshold">Blink Threshold:</span> <span id="blinkThreshold">0.40</span></div>
+			<div><span data-i18n="debug.leftEAR">Left EAR:</span> <span id="leftEAR">0.000</span></div>
+			<div><span data-i18n="debug.rightEAR">Right EAR:</span> <span id="rightEAR">0.000</span></div>
+			<div><span data-i18n="debug.avgEAR">Average EAR:</span> <span id="avgEAR">0.000</span></div>
+			<div><span data-i18n="debug.threshold">Blink Threshold:</span> <span id="blinkThreshold">0.400</span></div>
 			<div><span data-i18n="debug.eyeState">Eye State:</span> <span id="eyeState" data-i18n="debug.open">open</span></div>
 			<div><span data-i18n="debug.blinkCount">Blink Count:</span> <span id="blinkCount">0</span></div>
-			<div class="eye-movement-debug">
-				<div><span>Eye X:</span> <span id="eyeMovementX">0.00</span></div>
-				<div><span>Eye Y:</span> <span id="eyeMovementY">0.00</span></div>
-				<div><span>X Threshold:</span> <span id="eyeMovementThresholdX">0.00</span></div>
-				<div><span>Y Threshold:</span> <span id="eyeMovementThresholdY">0.00</span></div>
+			<div class="eye-tracking-debug">
+				<div class="eye-movement-debug">
+					<div><span>Eye X:</span> <span id="eyeMovementX">0.000</span></div>
+					<div><span>Eye Y:</span> <span id="eyeMovementY">0.000</span></div>
+					<div><span>Center X:</span> <span id="eyeMovementCenterX">0.000</span></div>
+					<div><span>Center Y:</span> <span id="eyeMovementCenterY">0.000</span></div>
+					<div><span>X Threshold:</span> <span id="eyeMovementThresholdX">0.000</span></div>
+					<div><span>Y Threshold:</span> <span id="eyeMovementThresholdY">0.000</span></div>
+					<div class="eye-cursor-container">
+						<div class="eye-cursor-center"></div>
+						<div class="eye-cursor"></div>
+					</div>
+				</div>
+				<div class="video-preview">
+					<video id="video" width="320" height="240" autoplay muted playsinline></video>
+					<canvas id="output-canvas"></canvas>
+				</div>
 			</div>
 		</div>
 
@@ -65,9 +89,10 @@
 			<strong data-i18n="instructions.cameraMode">Camera Mode:</strong><br>
 			<span data-i18n="instructions.step1">1. Allow camera access</span><br>
 			<span data-i18n="instructions.step2">2. Blink to move to next row</span><br>
-			<span data-i18n="instructions.step3">3. Pause 2 seconds to switch to column selection</span><br>
+			<span data-i18n="instructions.step3">3. Double blink to select row</span><br>
 			<span data-i18n="instructions.step4">4. Blink to move to next column</span><br>
-			<span data-i18n="instructions.step5">5. Double blink to select character/word</span><br><br>
+			<span data-i18n="instructions.step5">5. Double blink to select character/word</span><br>
+			<span data-i18n="instructions.step6">6. Triple blink to go back to row selection</span><br><br>
 			<strong data-i18n="instructions.eyeMovementMode">Eye Movement Mode:</strong><br>
 			<span data-i18n="instructions.eyeStep1">1. Look in desired direction to move</span><br>
 			<span data-i18n="instructions.eyeStep2">2. Double blink to select</span><br><br>
@@ -78,8 +103,6 @@
 			<span data-i18n="instructions.manualTest">• For testing without camera</span>
 		</div>
 	</div>
-
-	<video id="video" autoplay muted></video>
 
 	<!-- MediaPipe Scripts -->
 	<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
@@ -94,5 +117,6 @@
 	<script src="js/camera.js"></script>
 	<script src="js/grid.js"></script>
 	<script src="js/app.js"></script>
+
 </body>
 </html>

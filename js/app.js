@@ -1,6 +1,7 @@
 // Main application state and logic
 let currentState = {
-	mode: 'row', // 'row', 'column', 'eye_movement'
+	mode: 'row', // Start in row selection mode
+	navigationMode: 'blink', // 'blink', 'manual', 'eyeMovement'
 	selectedRow: 0,
 	selectedColumn: 0,
 	isActive: true,
@@ -8,26 +9,65 @@ let currentState = {
 	pauseStartTime: 0,
 	blinkCount: 0,
 	blinkTimeout: null,
-	navigationMode: 'blink' // 'blink', 'manual', 'eye_movement'
+	fastBlinkMode: false
 };
 
 let manualMode = false;
 let debugMode = false;
 
-const DOUBLE_BLINK_TIMEOUT = 500; // ms to wait for double blink
-const MODE_SWITCH_DELAY = 1500; // ms to switch from row to column mode
+// Timing constants
+const DOUBLE_BLINK_TIMEOUT_SLOW = 400; // Reduced from 500ms
+const DOUBLE_BLINK_TIMEOUT_FAST = 250; // Reduced from 300ms
+const MODE_SWITCH_DELAY = 1000; // Reduced from 1500ms for faster mode switching
+
+// Minimum time between blinks to prevent accidental detection
+const MIN_BLINK_INTERVAL = 100; // ms
 
 // Initialize the application
 async function init() {
+	// Initialize localization with stored preference
+	i18n.init();
+	
 	// Initialize localization
 	setupLanguageSelector();
 	i18n.updateUI();
 	
+	// Ensure we start in row mode with blink navigation
+	currentState.mode = 'row';
+	currentState.navigationMode = 'blink';
+	currentState.selectedRow = 0;
+	currentState.selectedColumn = 0;
+	
 	createGrid();
+	updateHighlights(); // Add immediate highlight update after grid creation
+	
 	if (!manualMode) {
 		await initMediaPipe();
+		// Load saved calibration data after MediaPipe is initialized
+		loadCalibrationData();
+		
+		// Show video if debug mode is enabled
+		const videoContainer = document.querySelector('.video-container');
+		if (videoContainer && debugMode) {
+			videoContainer.classList.add('show');
+		}
 	}
+	
+	// Show/hide blink speed controls based on initial mode
+	const blinkSpeedControls = document.getElementById('blinkSpeedControls');
+	blinkSpeedControls.style.display = currentState.navigationMode === 'blink' ? 'inline-flex' : 'none';
+	
+	// Set initial blink speed button states
+	document.getElementById('blinkSpeedSlowBtn').classList.toggle('active', !currentState.fastBlinkMode);
+	document.getElementById('blinkSpeedFastBtn').classList.toggle('active', currentState.fastBlinkMode);
+	
+	// Set initial button states
+	document.getElementById('manualModeBtn').classList.remove('active');
+	document.getElementById('blinkModeBtn').classList.add('active');
+	document.getElementById('eyeMovementModeBtn').classList.remove('active');
+	
 	updateModeIndicator();
+	updateHighlights(); // Ensure highlights are updated after all initialization
 }
 
 // Setup language selector
@@ -45,9 +85,14 @@ function setupLanguageSelector() {
 function onBlink() {
 	if (!currentState.isActive) return;
 	
-	totalBlinks++;
 	const now = Date.now();
 	
+	// Prevent too rapid blinks
+	if (now - currentState.lastBlinkTime < MIN_BLINK_INTERVAL) {
+		return;
+	}
+	
+	totalBlinks++;
 	currentState.lastBlinkTime = now;
 	currentState.blinkCount++;
 	
@@ -55,23 +100,28 @@ function onBlink() {
 		clearTimeout(currentState.blinkTimeout);
 	}
 	
+	const blinkTimeout = currentState.fastBlinkMode ? DOUBLE_BLINK_TIMEOUT_FAST : DOUBLE_BLINK_TIMEOUT_SLOW;
+	
 	currentState.blinkTimeout = setTimeout(() => {
 		if (currentState.blinkCount === 1) {
 			// Only handle single blinks if not in eye movement mode
-			if (currentState.navigationMode !== 'eye_movement') {
+			if (currentState.navigationMode !== 'eyeMovement') {
 				handleSingleBlink();
 			}
-		} else if (currentState.blinkCount >= 2) {
+		} else if (currentState.blinkCount === 2) {
 			handleDoubleBlink();
+		} else if (currentState.blinkCount >= 3 && currentState.navigationMode === 'blink') {
+			handleTripleBlink();
 		}
 		currentState.blinkCount = 0;
-	}, DOUBLE_BLINK_TIMEOUT);
+	}, blinkTimeout);
 }
 
 function handleSingleBlink() {
 	if (currentState.mode === 'row') {
+		// Move down one row
 		currentState.selectedRow = (currentState.selectedRow + 1) % gridData.length;
-		updateStatus(i18n.t('status.rowSelected').replace('{0}', currentState.selectedRow + 1));
+		updateStatus(i18n.t('status.rowSelectedDown').replace('{0}', currentState.selectedRow + 1));
 	} else if (currentState.mode === 'column') {
 		currentState.selectedColumn = (currentState.selectedColumn + 1) % gridData[currentState.selectedRow].length;
 		updateStatus(i18n.t('status.columnSelected').replace('{0}', currentState.selectedColumn + 1));
@@ -81,7 +131,7 @@ function handleSingleBlink() {
 }
 
 function handleDoubleBlink() {
-	if (currentState.navigationMode === 'eye_movement') {
+	if (currentState.navigationMode === 'eyeMovement') {
 		// In eye movement mode, double blink always selects the current cell
 		selectCell();
 		return;
@@ -92,6 +142,23 @@ function handleDoubleBlink() {
 		switchToColumnMode();
 	} else if (currentState.mode === 'column') {
 		selectCell();
+	}
+}
+
+function handleTripleBlink() {
+	if (currentState.navigationMode !== 'blink') return;
+	
+	if (currentState.mode === 'column') {
+		// Go back to row selection
+		currentState.mode = 'row';
+		updateModeIndicator();
+		updateStatus(i18n.t('status.backToRows'));
+		updateHighlights();
+	} else if (currentState.mode === 'row') {
+		// Move up one row (opposite of single blink which moves down)
+		currentState.selectedRow = (currentState.selectedRow - 1 + gridData.length) % gridData.length;
+		updateStatus(i18n.t('status.rowSelectedUp').replace('{0}', currentState.selectedRow + 1));
+		updateHighlights();
 	}
 }
 
@@ -165,10 +232,16 @@ function resetToRowMode() {
 
 function updateModeIndicator() {
 	const indicator = document.getElementById('modeIndicator');
-	if (currentState.navigationMode === 'eye_movement') {
-		indicator.textContent = i18n.t('mode.eyeMovement');
-	} else {
-		indicator.textContent = currentState.mode === 'row' ? i18n.t('mode.row') : i18n.t('mode.column');
+	switch (currentState.navigationMode) {
+		case 'eyeMovement':
+			indicator.textContent = i18n.t('mode.eyeMovement');
+			break;
+		case 'manual':
+			indicator.textContent = i18n.t('mode.manual');
+			break;
+		default:
+			indicator.textContent = currentState.mode === 'row' ? i18n.t('mode.row') : i18n.t('mode.column');
+			break;
 	}
 }
 
@@ -190,39 +263,66 @@ function toggleCamera() {
 	if (camera) {
 		camera.stop();
 	}
+	// Clear calibration when restarting camera
+	clearCalibrationData();
 	init();
 }
 
 function toggleManualMode() {
-	manualMode = !manualMode;
-	currentState.navigationMode = manualMode ? 'manual' : 'blink';
-	if (manualMode) {
-		if (camera) {
-			camera.stop();
-		}
-		updateManualModeUI();
-	} else {
-		init();
-	}
+	setMode('manual');
 }
 
 function toggleEyeMovement() {
-	if (currentState.navigationMode === 'eye_movement') {
-		// Switch back to blink mode
+	setMode('eyeMovement');
+}
+
+function setBlinkSpeed(isFast) {
+	currentState.fastBlinkMode = isFast;
+	
+	// Update button states
+	document.getElementById('blinkSpeedSlowBtn').classList.toggle('active', !isFast);
+	document.getElementById('blinkSpeedFastBtn').classList.toggle('active', isFast);
+}
+
+function setMode(newMode) {
+	if (newMode === currentState.navigationMode) return;
+	
+	const wasManual = currentState.navigationMode === 'manual';
+	
+	// Update mode buttons
+	document.getElementById('manualModeBtn').classList.remove('active');
+	document.getElementById('blinkModeBtn').classList.remove('active');
+	document.getElementById('eyeMovementModeBtn').classList.remove('active');
+	
+	document.getElementById(newMode + 'ModeBtn').classList.add('active');
+	
+	// Show/hide blink speed controls based on mode
+	const blinkSpeedControls = document.getElementById('blinkSpeedControls');
+	blinkSpeedControls.style.display = newMode === 'blink' ? 'inline-flex' : 'none';
+	
+	// Handle mode-specific setup
+	if (newMode === 'manual') {
+		if (camera) {
+			camera.stop();
+		}
+		currentState.navigationMode = 'manual';
+		updateManualModeUI();
+	} else if (newMode === 'eyeMovement') {
+		currentState.navigationMode = 'eyeMovement';
+		if (wasManual || !camera) {
+			init();
+		}
+		updateStatus(i18n.t('status.eyeMovement'));
+	} else { // blink mode
 		currentState.navigationMode = 'blink';
-		currentState.mode = 'row';
-		document.getElementById('eyeMovementBtn').classList.remove('active');
-		document.getElementById('calibrationOverlay').style.display = 'none';
+		if (wasManual || !camera) {
+			init();
+		}
 		resetToRowMode();
-	} else {
-		// Switch to eye movement mode
-		currentState.navigationMode = 'eye_movement';
-		currentState.mode = 'eye_movement';
-		document.getElementById('eyeMovementBtn').classList.add('active');
-		startEyeMovementCalibration();
 	}
+	
 	updateModeIndicator();
-	updateStatus(i18n.t('status.' + currentState.navigationMode));
+	updateHighlights(); // Always update highlights when changing modes
 }
 
 function startEyeMovementCalibration() {
@@ -297,14 +397,8 @@ window.onCalibrationComplete = function() {
 };
 
 function updateManualModeUI() {
-	const btn = document.getElementById('manualModeBtn');
-	if (manualMode) {
-		btn.textContent = i18n.t('buttons.cameraMode');
-		document.getElementById('cameraStatus').textContent = i18n.t('manualMode');
-		document.getElementById('cameraStatus').className = 'camera-status camera-ready';
-	} else {
-		btn.textContent = i18n.t('buttons.manualMode');
-	}
+	document.getElementById('cameraStatus').textContent = i18n.t('manualMode');
+	document.getElementById('cameraStatus').className = 'camera-status camera-ready';
 }
 
 function toggleDebug() {
@@ -323,9 +417,9 @@ function toggleDebug() {
 
 // Handle eye movement navigation
 window.handleEyeMovement = function(direction) {
-	if (currentState.navigationMode !== 'eye_movement') return;
+	if (currentState.navigationMode !== 'eyeMovement') return;
 
-	const gridWidth = 6;
+	const gridWidth = gridData[0].length;
 	const gridHeight = gridData.length;
 	let newRow = currentState.selectedRow;
 	let newCol = currentState.selectedColumn;
@@ -378,7 +472,7 @@ function updateHighlights() {
 		const row = Math.floor(index / 6);
 		const col = index % 6;
 		
-		if (currentState.navigationMode === 'eye_movement') {
+		if (currentState.navigationMode === 'eyeMovement') {
 			// In eye movement mode, only highlight the current cell
 			if (row === currentState.selectedRow && col === currentState.selectedColumn) {
 				cell.classList.add('cell-highlighted');
@@ -417,7 +511,7 @@ document.addEventListener('keydown', function(event) {
 function handleArrowKey(keyCode) {
 	if (!manualMode) return;
 
-	const gridWidth = 6;
+	const gridWidth = gridData[0].length;
 	const gridHeight = gridData.length;
 	let newRow = currentState.selectedRow;
 	let newCol = currentState.selectedColumn;
@@ -445,8 +539,40 @@ function handleArrowKey(keyCode) {
 	}
 	
 	updateHighlights();
-	updateStatus(i18n.t('status.manualCell').replace('{0}', currentState.selectedRow + 1).replace('{1}', currentState.selectedColumn + 1));
+	updateStatus(i18n.t('status.manualCell')
+		.replace('{0}', currentState.selectedRow + 1)
+		.replace('{1}', currentState.selectedColumn + 1));
+}
+
+// Add a function to clear calibration data
+function clearCalibrationData() {
+	try {
+		localStorage.removeItem(STORAGE_KEY_BLINK);
+		localStorage.removeItem(STORAGE_KEY_EYE_MOVEMENT);
+		console.log('Cleared all calibration data');
+		
+		// Reset to default values
+		userEarThreshold = DEFAULT_EAR_THRESHOLD;
+		calibrationOffsetX = 0;
+		calibrationOffsetY = 0;
+		calibrationScaleX = 1;
+		calibrationScaleY = 1;
+		
+		// Update debug display if needed
+		if (debugMode) {
+			document.getElementById('blinkThreshold').textContent = userEarThreshold.toFixed(3);
+			document.getElementById('eyeMovementThresholdX').textContent = EYE_MOVEMENT_THRESHOLD.toFixed(3);
+			document.getElementById('eyeMovementThresholdY').textContent = EYE_MOVEMENT_THRESHOLD.toFixed(3);
+		}
+	} catch (error) {
+		console.error('Error clearing calibration data:', error);
+	}
 }
 
 // Initialize on page load
-window.addEventListener('load', init);
+window.addEventListener('load', () => {
+	// Initialize the app
+	init();
+	// Ensure initial highlighting is set
+	updateHighlights();
+});
