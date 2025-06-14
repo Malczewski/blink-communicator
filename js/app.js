@@ -233,7 +233,21 @@ function startEyeMovementCalibration() {
 		overlay.id = 'calibrationOverlay';
 		overlay.innerHTML = `
 			<div class="calibration-container">
-				<div class="calibration-target"></div>
+				<div class="calibration-target target-center">
+					<span class="material-icons">radio_button_checked</span>
+				</div>
+				<div class="calibration-target target-left">
+					<span class="material-icons">arrow_back</span>
+				</div>
+				<div class="calibration-target target-right">
+					<span class="material-icons">arrow_forward</span>
+				</div>
+				<div class="calibration-target target-up">
+					<span class="material-icons">arrow_upward</span>
+				</div>
+				<div class="calibration-target target-down">
+					<span class="material-icons">arrow_downward</span>
+				</div>
 				<div class="calibration-instructions"></div>
 				<div class="calibration-progress"></div>
 			</div>

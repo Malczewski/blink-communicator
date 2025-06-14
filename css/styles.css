@@ -21,6 +21,10 @@ body {
     padding: 20px;
     box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
     border: 1px solid rgba(255, 255, 255, 0.18);
+    width: 100%;
+    min-width: 320px;
+    box-sizing: border-box;
+    overflow-x: hidden;
 }
 
 .header {
@@ -86,24 +90,29 @@ h1 {
 
 .grid {
     display: grid;
-    grid-template-columns: repeat(6, 1fr);
-    gap: 8px;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: min(8px, 1.5vw);
     margin-bottom: 20px;
+    width: 100%;
 }
 
 .cell {
     aspect-ratio: 1;
     background: rgba(255, 255, 255, 0.1);
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    border-radius: 10px;
+    border: min(2px, 0.5vw) solid rgba(255, 255, 255, 0.3);
+    border-radius: min(10px, 2vw);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.2rem;
+    font-size: clamp(0.7rem, 2.5vw, 1.2rem);
     font-weight: bold;
     transition: all 0.3s ease;
     cursor: pointer;
     text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+    padding: min(8px, 1vw);
+    word-break: break-word;
+    text-align: center;
+    line-height: 1.2;
 }
 
 .cell:hover {
@@ -219,7 +228,14 @@ h1 {
 
 @media (max-width: 768px) {
     .container {
-        padding: 15px;
+        padding: 10px;
+        margin: 0;
+        border-radius: 0;
+        min-height: 100vh;
+    }
+    
+    body {
+        padding: 0;
     }
     
     h1 {
@@ -227,16 +243,27 @@ h1 {
     }
     
     .grid {
-        gap: 6px;
+        gap: min(4px, 1vw);
+        margin: 10px 0;
+        width: 100%;
     }
     
     .cell {
-        font-size: 1rem;
+        padding: min(2px, 0.5vw);
     }
     
     #textInput {
         font-size: 1.2rem;
         padding: 12px;
+    }
+
+    .controls {
+        gap: 8px;
+    }
+
+    .control-btn {
+        padding: 8px 12px;
+        font-size: 0.9rem;
     }
 }
 
@@ -260,21 +287,27 @@ h1 {
 }
 
 .calibration-target {
-    width: 20px;
-    height: 20px;
-    background: #4ade80;
-    border-radius: 50%;
+    width: 60px;
+    height: 60px;
     position: absolute;
     transition: all 0.3s ease;
-    box-shadow: 0 0 0 4px rgba(74, 222, 128, 0.3),
-                0 0 0 8px rgba(74, 222, 128, 0.2);
-    animation: pulse 2s infinite;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #4ade80;
+}
+
+.calibration-target .material-icons {
+    font-size: 48px;
+    filter: drop-shadow(0 0 8px rgba(74, 222, 128, 0.5));
 }
 
 .calibration-target.target-paused {
-    background: #fbbf24;
-    box-shadow: 0 0 0 4px rgba(251, 191, 36, 0.3),
-                0 0 0 8px rgba(251, 191, 36, 0.2);
+    color: #fbbf24;
+}
+
+.calibration-target.target-paused .material-icons {
+    filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.5));
     animation: countdown 1s linear;
 }
 
@@ -287,12 +320,6 @@ h1 {
         transform: scale(1);
         opacity: 1;
     }
-}
-
-@keyframes pulse {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.2); }
-    100% { transform: scale(1); }
 }
 
 .calibration-target.target-center {
@@ -369,6 +396,7 @@ h1 {
     backdrop-filter: blur(10px);
     max-width: 600px;
     width: 90%;
+    position: relative;
 }
 
 #blinkCalibrationOverlay .calibration-title {
@@ -387,4 +415,28 @@ h1 {
 #blinkCalibrationOverlay .calibration-progress {
     font-size: 1.2rem;
     color: rgba(255, 255, 255, 0.8);
+}
+
+.eye-icon {
+    font-family: 'Material Icons';
+    font-size: 120px;
+    width: 120px;
+    height: 120px;
+    margin: 2rem auto;
+    display: none;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.eye-icon.show {
+    display: block;
+}
+
+@keyframes blinkAnimation {
+    0% { transform: scale(1); }
+    50% { transform: scale(0.1); }
+    100% { transform: scale(1); }
+}
+
+.eye-icon.animate {
+    animation: blinkAnimation 2s infinite;
 }

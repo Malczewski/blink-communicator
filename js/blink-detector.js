@@ -7,6 +7,14 @@ let eyesClosedFrames = 0;
 let eyesOpenFrames = 0;
 let totalBlinks = 0;
 
+// Detect mobile device
+const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+// Set default threshold based on device type
+const DEFAULT_EAR_THRESHOLD = isMobileDevice ? 0.24 : 0.4;
+const EAR_THRESHOLD = DEFAULT_EAR_THRESHOLD; // Default threshold, will be adjusted by calibration
+let userEarThreshold = EAR_THRESHOLD;
+
 // Blink calibration
 let isBlinkCalibrating = false;
 let blinkCalibrationPhase = 'none'; // none, countdown, prepareOpen, open, prepareClosed, closed, complete
@@ -47,8 +55,6 @@ let calibrationScaleY = 1;
 let isCalibrationPaused = false;
 const CALIBRATION_PAUSE_DURATION = 1000; // 1 second pause
 
-const EAR_THRESHOLD = 0.4; // Default threshold, will be adjusted by calibration
-let userEarThreshold = EAR_THRESHOLD;
 const CONSECUTIVE_FRAMES = 2;
 
 // Eye landmark indices for MediaPipe Face Mesh
@@ -204,6 +210,8 @@ function startBlinkCalibration() {
 		overlay.innerHTML = `
 			<div class="calibration-container">
 				<div class="calibration-title"></div>
+				<span class="eye-icon material-icons eye-open">visibility</span>
+				<span class="eye-icon material-icons eye-closed">visibility_off</span>
 				<div class="calibration-instructions"></div>
 				<div class="calibration-progress"></div>
 			</div>
@@ -219,40 +227,52 @@ function updateBlinkCalibrationUI() {
 	const title = document.querySelector('#blinkCalibrationOverlay .calibration-title');
 	const instructions = document.querySelector('#blinkCalibrationOverlay .calibration-instructions');
 	const progress = document.querySelector('#blinkCalibrationOverlay .calibration-progress');
+	const eyeOpenIcon = document.querySelector('#blinkCalibrationOverlay .eye-open');
+	const eyeClosedIcon = document.querySelector('#blinkCalibrationOverlay .eye-closed');
 	
 	title.textContent = i18n.t('calibration.blinkTitle');
 	
 	const now = Date.now();
 	const elapsed = now - blinkCalibrationStartTime;
+
+	// Hide both icons initially
+	eyeOpenIcon.classList.remove('show', 'animate');
+	eyeClosedIcon.classList.remove('show');
 	
 	switch (blinkCalibrationPhase) {
 		case 'countdown':
 			instructions.textContent = i18n.t('calibration.blinkWait').replace('{0}', blinkCalibrationCountdown);
 			progress.textContent = '';
+			eyeOpenIcon.classList.add('show', 'animate');
 			break;
 		case 'prepareOpen':
 			instructions.textContent = i18n.t('calibration.blinkPrepareOpen');
 			progress.textContent = i18n.t('calibration.blinkWait')
 				.replace('{0}', Math.ceil((CALIBRATION_PREPARE_DURATION - elapsed) / 1000));
+			eyeOpenIcon.classList.add('show');
 			break;
 		case 'open':
 			instructions.textContent = i18n.t('calibration.blinkOpenEyes');
 			progress.textContent = i18n.t('calibration.blinkProgress')
 				.replace('{0}', Math.ceil((CALIBRATION_DURATION - elapsed) / 1000));
+			eyeOpenIcon.classList.add('show');
 			break;
 		case 'prepareClosed':
 			instructions.textContent = i18n.t('calibration.blinkPrepareClosed');
 			progress.textContent = i18n.t('calibration.blinkWait')
 				.replace('{0}', Math.ceil((CALIBRATION_PREPARE_DURATION - elapsed) / 1000));
+			eyeClosedIcon.classList.add('show');
 			break;
 		case 'closed':
 			instructions.textContent = i18n.t('calibration.blinkCloseEyes');
 			progress.textContent = i18n.t('calibration.blinkProgress')
 				.replace('{0}', Math.ceil((CALIBRATION_DURATION - elapsed) / 1000));
+			eyeClosedIcon.classList.add('show');
 			break;
 		case 'complete':
 			instructions.textContent = i18n.t('calibration.blinkComplete');
 			progress.textContent = '';
+			eyeOpenIcon.classList.add('show');
 			break;
 	}
 }
