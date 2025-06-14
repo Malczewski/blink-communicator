@@ -33,6 +33,8 @@ const languageGrids = {
 
 // Default to English grid if language not found
 let defaultGridData = languageGrids.en;
+// Initialize gridData with default
+let gridData = processGridSpecialChars(defaultGridData);
 
 function loadGridFromUrl() {
 	try {
