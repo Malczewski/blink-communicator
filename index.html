@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eye Blink Communicator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 10px;
+            color: white;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .input-section {
+            margin-bottom: 20px;
+        }
+
+        #textInput {
+            width: 100%;
+            padding: 15px;
+            font-size: 1.5rem;
+            border: none;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+            text-align: center;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .status {
+            text-align: center;
+            margin: 15px 0;
+            font-size: 1.2rem;
+            min-height: 30px;
+        }
+
+        .mode-indicator {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .camera-status {
+            text-align: center;
+            margin-bottom: 15px;
+            font-size: 1rem;
+        }
+
+        .camera-ready {
+            color: #4ade80;
+        }
+
+        .camera-error {
+            color: #f87171;
+        }
+
+        .camera-loading {
+            color: #fbbf24;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .cell {
+            aspect-ratio: 1;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+        }
+
+        .cell:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.05);
+        }
+
+        .cell.row-highlighted {
+            background: rgba(255, 255, 0, 0.3);
+            border-color: #fbbf24;
+            box-shadow: 0 0 15px rgba(251, 191, 36, 0.5);
+        }
+
+        .cell.row-selected {
+            background: rgba(34, 197, 94, 0.3);
+            border-color: #22c55e;
+            box-shadow: 0 0 20px rgba(34, 197, 94, 0.6);
+        }
+
+        .cell.cell-highlighted {
+            background: rgba(239, 68, 68, 0.4);
+            border-color: #ef4444;
+            box-shadow: 0 0 25px rgba(239, 68, 68, 0.7);
+            transform: scale(1.1);
+        }
+
+        .cell.selected-animation {
+            animation: selectPulse 0.8s ease-in-out;
+        }
+
+        @keyframes selectPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.3); background: rgba(168, 85, 247, 0.6); }
+            100% { transform: scale(1); }
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .control-btn {
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .control-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .instructions {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        #video {
+            display: none;
+        }
+
+        .debug-info {
+            margin-top: 10px;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-family: monospace;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+            
+            h1 {
+                font-size: 1.5rem;
+            }
+            
+            .grid {
+                gap: 6px;
+            }
+            
+            .cell {
+                font-size: 1rem;
+            }
+            
+            #textInput {
+                font-size: 1.2rem;
+                padding: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Система общения морганием</h1>
+            <div class="camera-status" id="cameraStatus">Загрузка MediaPipe...</div>
+        </div>
+
+        <div class="input-section">
+            <input type="text" id="textInput" placeholder="Ваш текст появится здесь..." readonly>
+        </div>
+
+        <div class="mode-indicator" id="modeIndicator">
+            Режим: Выбор строки
+        </div>
+
+        <div class="status" id="status">
+            Моргните для перехода к следующей строке
+        </div>
+
+        <div class="grid" id="grid"></div>
+
+        <div class="controls">
+            <button class="control-btn" onclick="resetSelection()">Сброс</button>
+            <button class="control-btn" onclick="clearText()">Очистить текст</button>
+            <button class="control-btn" onclick="toggleCamera()">Перезапуск камеры</button>
+            <button class="control-btn" onclick="toggleManualMode()" id="manualModeBtn">Ручной режим</button>
+            <button class="control-btn" onclick="toggleDebug()" id="debugBtn">Отладка</button>
+            <!-- <button class="control-btn" onclick="toggleImmediateMode()" id="immediateModeBtn">
+                Быстрый режим
+            </button> -->
+        </div>
+
+        <div class="debug-info" id="debugInfo" style="display: none;">
+            <div>EAR левый: <span id="leftEAR">0.00</span></div>
+            <div>EAR правый: <span id="rightEAR">0.00</span></div>
+            <div>Среднее EAR: <span id="avgEAR">0.00</span></div>
+            <div>Состояние глаз: <span id="eyeState">открыты</span></div>
+            <div>Счетчик морганий: <span id="blinkCount">0</span></div>
+        </div>
+
+        <div class="instructions">
+            <strong>Инструкция:</strong><br>
+            <strong>Режим камеры:</strong><br>
+            1. Разрешите доступ к камере<br>
+            2. Моргните для перехода к следующей строке<br>
+            3. Пауза 2 секунды для перехода к выбору столбца<br>
+            4. Моргните для перехода к следующему столбцу<br>
+            5. Двойное моргание для выбора символа/слова<br><br>
+            <strong>Ручной режим:</strong><br>
+            • Пробел = одиночное моргание (навигация)<br>
+            • Enter = двойное моргание (выбор)<br>
+            • Для тестирования без камеры
+        </div>
+    </div>
+
+    <video id="video" autoplay muted></video>
+
+      <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js"></script>
+
+    <script>
+        // Russian letters and words arranged by frequency
+        const gridData = [
+            ['ДА', 'НЕТ', 'ПРОБЕЛ', 'ОТМЕНА', 'СТОП', 'КОНЕЦ'],
+            ['О', 'А', 'Е', 'И', 'Н', 'Т'],
+            ['Р', 'С', 'Л', 'В', 'К', 'М'],
+            ['П', 'У', 'Д', 'Я', 'Ы', 'З'],
+            ['Б', 'Г', 'Ч', 'Й', 'Х', 'Ж'],
+            ['Ш', 'Ю', 'Ц', 'Щ', 'Э', 'Ф'],
+        ];
+
+        let currentState = {
+            mode: 'row', // 'row' or 'column'
+            selectedRow: 0,
+            selectedColumn: 0,
+            isActive: true,
+            lastBlinkTime: 0,
+            pauseStartTime: 0,
+            blinkCount: 0,
+            blinkTimeout: null
+        };
+
+        let video;
+        let faceMesh;
+        let camera;
+        let manualMode = false;
+        let debugMode = false;
+        
+        // Eye tracking variables
+        let leftEAR = 0;
+        let rightEAR = 0;
+        let avgEAR = 0;
+        let eyesClosed = false;
+        let eyesClosedFrames = 0;
+        let eyesOpenFrames = 0;
+        let totalBlinks = 0;
+        
+        const EAR_THRESHOLD = 0.25; // Eye Aspect Ratio threshold for blink detection
+        const CONSECUTIVE_FRAMES = 2; // Frames to confirm blink
+        const DOUBLE_BLINK_TIMEOUT = 500; // ms to wait for double blink
+        const MODE_SWITCH_DELAY = 1500; // ms to switch from row to column mode
+
+        // Eye landmark indices for MediaPipe Face Mesh
+        // const LEFT_EYE_INDICES = [362, 382, 381, 380, 374, 373, 390, 249, 263, 466, 388, 387, 386, 385, 384, 398];
+        // const RIGHT_EYE_INDICES = [33, 7, 163, 144, 145, 153, 154, 155, 133, 173, 157, 158, 159, 160, 161, 246];
+        const LEFT_EYE_INDICES = [33, 7, 163, 144, 145, 153, 154, 155, 133, 173, 157, 158, 159, 160, 161, 246];
+        const RIGHT_EYE_INDICES = [362, 382, 381, 380, 374, 373, 390, 249, 263, 466, 388, 387, 386, 385, 384, 398];
+
+        // Initialize the application
+        async function init() {
+            createGrid();
+            if (!manualMode) {
+                await initMediaPipe();
+            }
+        }
+
+        function createGrid() {
+            const grid = document.getElementById('grid');
+            grid.innerHTML = '';
+            
+            gridData.forEach((row, rowIndex) => {
+                row.forEach((cell, colIndex) => {
+                    const cellElement = document.createElement('div');
+                    cellElement.className = 'cell';
+                    cellElement.textContent = cell;
+                    cellElement.dataset.row = rowIndex;
+                    cellElement.dataset.col = colIndex;
+                    grid.appendChild(cellElement);
+                });
+            });
+            
+            updateHighlights();
+        }
+
+        async function initMediaPipe() {
+            try {
+                document.getElementById('cameraStatus').textContent = 'Инициализация MediaPipe...';
+                document.getElementById('cameraStatus').className = 'camera-status camera-loading';
+
+                // Initialize MediaPipe Face Mesh
+                faceMesh = new FaceMesh({
+                    locateFile: (file) => {
+                        return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
+                    }
+                });
+
+                faceMesh.setOptions({
+                    maxNumFaces: 1,
+                    refineLandmarks: false, // Disable for performance
+                    minDetectionConfidence: 0.7, // Higher for stability
+                    minTrackingConfidence: 0.6,
+                    processEveryNthFrame: 2
+                });
+                faceMesh.onResults(onResults);
+
+                // Initialize camera
+                video = document.getElementById('video');
+                camera = new Camera(video, {
+                    onFrame: async () => {
+                        await faceMesh.send({image: video});
+                    },
+                    width: 320, // 640,  // Lower resolution for mobile
+                    height: 240 // 480,
+                });
+
+                await camera.start();
+                
+                document.getElementById('cameraStatus').textContent = 'MediaPipe активен - следите за глазами';
+                document.getElementById('cameraStatus').className = 'camera-status camera-ready';
+
+            } catch (error) {
+                console.error('MediaPipe initialization error:', error);
+                document.getElementById('cameraStatus').textContent = 'Ошибка MediaPipe - включен ручной режим';
+                document.getElementById('cameraStatus').className = 'camera-status camera-error';
+                manualMode = true;
+                updateManualModeUI();
+            }
+        }
+
+        function onResults(results) {
+            if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) {
+                return;
+            }
+
+            const landmarks = results.multiFaceLandmarks[0];
+            
+            // Calculate Eye Aspect Ratio (EAR) for both eyes
+            leftEAR = calculateEAR(landmarks, LEFT_EYE_INDICES);
+            rightEAR = calculateEAR(landmarks, RIGHT_EYE_INDICES);
+            avgEAR = (leftEAR + rightEAR) / 2;
+
+            // Update debug info
+            if (debugMode) {
+                document.getElementById('leftEAR').textContent = leftEAR.toFixed(3);
+                document.getElementById('rightEAR').textContent = rightEAR.toFixed(3);
+                document.getElementById('avgEAR').textContent = avgEAR.toFixed(3);
+                document.getElementById('eyeState').textContent = eyesClosed ? 'закрыты' : 'открыты';
+                document.getElementById('blinkCount').textContent = totalBlinks;
+            }
+
+            // Blink detection logic
+            if (avgEAR < EAR_THRESHOLD) {
+                if (!eyesClosed) {
+                    eyesClosedFrames++;
+                    if (eyesClosedFrames >= CONSECUTIVE_FRAMES) {
+                        eyesClosed = true;
+                        eyesOpenFrames = 0;
+                    }
+                }
+            } else {
+                if (eyesClosed) {
+                    eyesOpenFrames++;
+                    if (eyesOpenFrames >= CONSECUTIVE_FRAMES) {
+                        eyesClosed = false;
+                        eyesClosedFrames = 0;
+                        onBlink(); // Blink detected!
+                    }
+                } else {
+                    eyesClosedFrames = 0;
+                }
+            }
+        }
+
+        function calculateEAR(landmarks, eyeIndices) {
+            // Correct landmarks for EAR calculation
+            // Left eye: [33, 7, 163, 144, 145, 153] - key points
+            // Right eye: [362, 382, 381, 380, 374, 373] - key points
+            
+            let eyePoints;
+            if (eyeIndices === LEFT_EYE_INDICES) {
+                eyePoints = [
+                    landmarks[33],  // left corner
+                    landmarks[159], // top 1
+                    landmarks[158], // top 2
+                    landmarks[133], // right corner
+                    landmarks[153], // bottom 2
+                    landmarks[144]  // bottom 1
+                ];
+            } else {
+                eyePoints = [
+                    landmarks[362], // left corner
+                    landmarks[385], // top 1
+                    landmarks[386], // top 2
+                    landmarks[263], // right corner
+                    landmarks[380], // bottom 2
+                    landmarks[374]  // bottom 1
+                ];
+            }
+            
+            // EAR formula: (|p2-p6| + |p3-p5|) / (2 * |p1-p4|)
+            const d1 = distance(eyePoints[1], eyePoints[5]); // vertical 1
+            const d2 = distance(eyePoints[2], eyePoints[4]); // vertical 2
+            const d3 = distance(eyePoints[0], eyePoints[3]); // horizontal
+            
+            const ear = (d1 + d2) / (2.0 * d3);
+            return ear;
+        }
+
+        function distance(point1, point2) {
+            return Math.sqrt(
+                Math.pow(point1.x - point2.x, 2) + 
+                Math.pow(point1.y - point2.y, 2)
+            );
+        }
+        let immediateMode = false; // for mobile
+        function onBlink() {
+            if (!currentState.isActive) return;
+            
+            totalBlinks++;
+            const now = Date.now();
+            
+            if (immediateMode) {
+                // Immediate response mode
+                if (currentState.mode === 'row') {
+                    handleSingleBlink();
+                } else {
+                    selectCell(); // Direct selection
+                }
+                return;
+            }
+            
+            // Original double-blink logic...
+            currentState.lastBlinkTime = now;
+            currentState.blinkCount++;
+            
+            if (currentState.blinkTimeout) {
+                clearTimeout(currentState.blinkTimeout);
+            }
+            
+            currentState.blinkTimeout = setTimeout(() => {
+                if (currentState.blinkCount === 1) {
+                    handleSingleBlink();
+                } else if (currentState.blinkCount >= 2) {
+                    handleDoubleBlink();
+                }
+                currentState.blinkCount = 0;
+            }, DOUBLE_BLINK_TIMEOUT);
+        }
+
+        // 6. Add immediate mode toggle
+        function toggleImmediateMode() {
+            immediateMode = !immediateMode;
+            const status = immediateMode ? 'включен' : 'выключен';
+            updateStatus(`Быстрый режим ${status}`);
+        }
+
+        function handleSingleBlink() {
+            if (currentState.mode === 'row') {
+                currentState.selectedRow = (currentState.selectedRow + 1) % gridData.length;
+                updateStatus('Строка ' + (currentState.selectedRow + 1) + '. Моргните для следующей или подождите 2 сек');
+                
+                // Start pause timer for mode switch
+                currentState.pauseStartTime = Date.now();
+                setTimeout(() => {
+                    if (Date.now() - currentState.lastBlinkTime >= MODE_SWITCH_DELAY) {
+                        switchToColumnMode();
+                    }
+                }, MODE_SWITCH_DELAY);
+                
+            } else if (currentState.mode === 'column') {
+                currentState.selectedColumn = (currentState.selectedColumn + 1) % gridData[currentState.selectedRow].length;
+                updateStatus('Столбец ' + (currentState.selectedColumn + 1) + '. Двойное моргание для выбора');
+            }
+            
+            updateHighlights();
+        }
+
+        function handleDoubleBlink() {
+            if (currentState.mode === 'column') {
+                selectCell();
+            }
+        }
+
+        function switchToColumnMode() {
+            currentState.mode = 'column';
+            currentState.selectedColumn = 0;
+            updateModeIndicator();
+            updateStatus('Режим столбца. Моргните для следующего столбца, двойное моргание для выбора');
+            updateHighlights();
+        }
+
+        function selectCell() {
+            const selectedValue = gridData[currentState.selectedRow][currentState.selectedColumn];
+            
+            // Animate selection
+            const cellElements = document.querySelectorAll('.cell');
+            const selectedCellIndex = currentState.selectedRow * 6 + currentState.selectedColumn;
+            const selectedCell = cellElements[selectedCellIndex];
+            
+            if (selectedCell) {
+                selectedCell.classList.add('selected-animation');
+                setTimeout(() => {
+                    selectedCell.classList.remove('selected-animation');
+                }, 800);
+            }
+            
+            // Process the selected value
+            processSelection(selectedValue);
+            
+            // Reset to row mode
+            resetToRowMode();
+        }
+
+        function processSelection(value) {
+            const textInput = document.getElementById('textInput');
+            let currentText = textInput.value;
+            
+            switch (value) {
+                case 'ПРОБЕЛ':
+                    textInput.value = currentText + ' ';
+                    break;
+                case 'ОТМЕНА':
+                    textInput.value = currentText.slice(0, -1);
+                    break;
+                case 'ДА':
+                    textInput.value = currentText + ' ДА ';
+                    break;
+                case 'НЕТ':
+                    textInput.value = currentText + ' НЕТ ';
+                    break;
+                case 'СТОП':
+                    textInput.value = currentText + ' СТОП ';
+                    break;
+                case 'КОНЕЦ':
+                    // Could trigger text-to-speech or save functionality
+                    updateStatus('СООБЩЕНИЕ ЗАВЕРШЕНО: ' + textInput.value);
+                    break;
+                default:
+                    textInput.value = currentText + value;
+                    break;
+            }
+        }
+
+        function resetToRowMode() {
+            currentState.mode = 'row';
+            currentState.selectedRow = 0;
+            currentState.selectedColumn = 0;
+            updateModeIndicator();
+            updateStatus('Выберите строку морганием');
+            updateHighlights();
+        }
+
+        function updateHighlights() {
+            const cells = document.querySelectorAll('.cell');
+            cells.forEach((cell, index) => {
+                cell.classList.remove('row-highlighted', 'row-selected', 'cell-highlighted');
+                
+                const row = Math.floor(index / 6);
+                const col = index % 6;
+                
+                if (currentState.mode === 'row') {
+                    if (row === currentState.selectedRow) {
+                        cell.classList.add('row-highlighted');
+                    }
+                } else if (currentState.mode === 'column') {
+                    if (row === currentState.selectedRow) {
+                        cell.classList.add('row-selected');
+                        if (col === currentState.selectedColumn) {
+                            cell.classList.add('cell-highlighted');
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateModeIndicator() {
+            const indicator = document.getElementById('modeIndicator');
+            indicator.textContent = currentState.mode === 'row' ? 'Режим: Выбор строки' : 'Режим: Выбор столбца';
+        }
+
+        function updateStatus(message) {
+            document.getElementById('status').textContent = message;
+        }
+
+        function resetSelection() {
+            currentState.isActive = true;
+            resetToRowMode();
+        }
+
+        function clearText() {
+            document.getElementById('textInput').value = '';
+        }
+
+        function toggleCamera() {
+            if (camera) {
+                camera.stop();
+            }
+            init();
+        }
+
+        function toggleManualMode() {
+            manualMode = !manualMode;
+            if (manualMode) {
+                if (camera) {
+                    camera.stop();
+                }
+                updateManualModeUI();
+            } else {
+                init();
+            }
+        }
+
+        function updateManualModeUI() {
+            const btn = document.getElementById('manualModeBtn');
+            if (manualMode) {
+                btn.textContent = 'Режим камеры';
+                document.getElementById('cameraStatus').textContent = 'Ручной режим: Пробел=моргание, Enter=двойное моргание';
+                document.getElementById('cameraStatus').className = 'camera-status camera-ready';
+            } else {
+                btn.textContent = 'Ручной режим';
+            }
+        }
+
+        function toggleDebug() {
+            debugMode = !debugMode;
+            const debugInfo = document.getElementById('debugInfo');
+            const debugBtn = document.getElementById('debugBtn');
+            
+            if (debugMode) {
+                debugInfo.style.display = 'block';
+                debugBtn.textContent = 'Скрыть отладку';
+            } else {
+                debugInfo.style.display = 'none';
+                debugBtn.textContent = 'Отладка';
+            }
+        }
+
+        // Keyboard controls for manual mode
+        document.addEventListener('keydown', function(event) {
+            if (!manualMode) return;
+            
+            if (event.code === 'Space') {
+                event.preventDefault();
+                handleSingleBlink();
+            } else if (event.code === 'Enter') {
+                event.preventDefault();
+                handleDoubleBlink();
+            }
+        });
+
+        // Initialize on page load
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>
